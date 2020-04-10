@@ -1,6 +1,8 @@
 import heapq
 import numpy as np
 from typing import Tuple
+import math
+import random
 
 # creating minHeap class for A*
 
@@ -71,72 +73,68 @@ def gen_2d_map(m, n, p):
     mtx = np.random.random((m, n))
 
     def mapper(x): return True if x > p else False
-    vfunc = vectorize(mapper)
+    vfunc = np.vectorize(mapper)
     return vfunc(mtx)
 
 
-class mazeProblem:
-    # initialise requires map. Can take start and end positions as tuplies
-    def __init__(self, map, start: Tuple[int, int], end: Tuple[int, int]):
-        self.map = np.array(map)
-        self.start = start if start else (0, 0)
-        self.end = end if end else map.shape
-        self.loc = self.start
+class mNode:
+    def __init__(self, isObstacle=False, visited=False, globalDist=float('inf'),
+                 locDist=float('inf'), x=None, y=None, neighbours=[], parent=None):
+        self.isObstacle = isObstacle
+        self.visited = visited
+        self.globalDist = globalDist
+        self.locDist = locDist
+        self.x = x
+        self.y = y
+        self.neighbours = neighbours
+        self.parent = parent
 
-    def isStart(self):
-        if self.loc == = self.start:
+
+class mazeSetup:
+    # initialise requires map. Can take start and end positions as tuples
+    def createNodeMap(self, obstacleMap):
+        height, width = obstacleMap.shape
+        nodeMap = [[mNode(isObstacle=obstacleMap[i, j], x=j, y=i)
+                    for j in range(width)] for i in range(height)]
+        for i in range(height):
+            for j in range(width):
+                for ud in range(-1, 2):
+                    for lr in range(-1, 2):
+                        if 0 <= (i+ud) < height and 0 <= (j + lr) < width and not(lr == ud == 0):
+                            nodeMap[i][j].neighbours.append(
+                                nodeMap[i+ud][j+lr])
+        return nodeMap
+
+    # takes start and end as x,y coordinates
+    def __init__(self, obstacleMap, start: Tuple[int, int], end: Tuple[int, int]):
+        self.map = self.createNodeMap(obstacleMap)
+        self.start = start
+        self.end = end
+        self.map[start[1]][start[0]].isObstacle = False
+        self.map[end[1]][start[0]].isObstacle = False
+
+    def isStart(self, node):
+        if (node.x == self.start[0]) and (node.y == self.start[1]):
             return True
         return False
 
-    def isEnd(self):
-        if self.loc == = self.end:
+    def isEnd(self, node):
+        if (node.x == self.end[0]) and (node.y == self.end[1]):
             return True
         return False
 
-    def moveTo(self, loc: tuple):
-        self.loc = loc
-
-    # gets valid moves based on current position, returns list of tuples
-    # checks that moves are within bounds and are on a TRUE
-    def getMoves(self):
-        curr_i = self.loc[0]
-        curr_j = self.loc[1]
-        moves = []
-        for i in range(-1, 2):
-            for j in range(-1, 2):
-                to_i = curr_i + i
-                to_j = curr_j + j
-                if i == j == 0:
-                    continue
-                elif not (0<=to_i<len(self.map) and 0<=to_j<len(self.map[0])):
-                    continue
-                elif self.map[to_i][to_j]:
-                    moves.append((to_i, to_j))
-        return moves
-    
-def AStarMap(problem):
-    map = problem.map
-    fromMap = [[[] for j in range(len(map[0]))] for i in range(len(map))]
-    
-
-
+# calculates the manhattan distance between two nodes requiring x and y fields
+def nodeManhattanDistance(node1, node2):
+    return np.abs(node1.x - node1.y) + np.abs(node2.x - node2.y)
 
 
 
 # for testing
 def main():
-    import random
-    l1 = [random.randint(0, 20) for i in range(10)]
-    l2 = minHeap(l1)
-    print(l1)
-    print(l2.heap)
-    print(l2.heapSort())
-    popped = l2.pop()
-    print(popped)
-    print(l2.heap)
-    print(l2)
-    print(len(l2))
+    pass
 
 
 if __name__ == "__main__":
-    main()
+    map = gen_2d_map(10, 15, 0.3)
+    problem = mazeSetup(map, (3, 3), (5, 3))
+    print(problem.map)
