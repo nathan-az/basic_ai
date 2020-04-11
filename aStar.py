@@ -44,21 +44,32 @@ class mazeSetup:
         # set isObstacle attribute based on index in obstacleMap
         nodeMap = [[mNode(isObstacle=obstacleMap[i, j], x=j, y=i, neighbours=list())
                     for j in range(width)] for i in range(height)]
-
         # allows diagonal movement, sets array of neighbouring nodes
         for i in range(height):
             for j in range(width):
                 currNode = nodeMap[i][j]
-                for ud in range(-1, 2):
-                    for lr in range(-1, 2):
-                        if 0 <= (i+ud) < height and 0 <= (j+lr) < width and (not(lr == ud == 0)):
-                            currNode.neighbours.append(
-                                nodeMap[i+ud][j+lr])
+                if self.diag:
+                    for ud in range(-1, 2):
+                        for lr in range(-1, 2):
+                            if 0 <= (i+ud) < height and 0 <= (j+lr) < width and (not(lr == ud == 0)):
+                                currNode.neighbours.append(
+                                    nodeMap[i+ud][j+lr])
+                else:
+                    if 0 <= (i + -1):
+                        currNode.neighbours.append(nodeMap[i + -1][j])
+                    if 0 <= (j + -1):
+                        currNode.neighbours.append(nodeMap[i][j + -1])
+                    if (i + 1)<height:
+                        currNode.neighbours.append(nodeMap[i + 1][j])
+                    if (j + 1)<width:
+                        currNode.neighbours.append(nodeMap[i][j + 1])
+
         return nodeMap
 
     # takes start and end as x,y coordinates
-    def __init__(self, obstacleMap, start: Tuple[int, int], end: Tuple[int, int]):
+    def __init__(self, obstacleMap, start: Tuple[int, int], end: Tuple[int, int], diag=False):
         self.obstacleMap = obstacleMap
+        self.diag = diag
         self.obstacleMap[start[1]][start[0]] = False
         self.obstacleMap[end[1]][end[0]] = False
         self.nMap = self.createNodeMap(obstacleMap)
@@ -108,8 +119,6 @@ def AStar(problem, h):
         # test after
         heapq.heapify(toVisit)
 
-        if len(toVisit) < 1:
-            break
 
         # we explore the first value in the toVisit array
         # this will be the value with the lowest globalCost as this as highest priority
@@ -131,6 +140,7 @@ def AStar(problem, h):
                 nb.localCost = costFromCurr
                 nb.globalCost = nb.localCost + h(nb, endNode)
 
+
     return startNode, endNode, visited, toVisit
 
 def optimal_path(startNode, endNode):
@@ -139,7 +149,7 @@ def optimal_path(startNode, endNode):
     path.append(currNode)
     if currNode.parent is None:
         return path
-    while currNode != startNode:
+    while currNode.parent is not None:
         currNode = currNode.parent
         path.append(currNode)
     return path
@@ -191,8 +201,8 @@ def print_grid(path, startNode, endNode, visited, toVisit, obsMap):
     target_vis[startNode.y][startNode.x] = 10
     target_vis[endNode.y][endNode.x] = 20
 
-    cmap = colors.ListedColormap(['white', 'xkcd:light blue', 'xkcd:very pale green', 'xkcd:royal blue', 'black', 'xkcd:crimson', 'grey'])
-    bounds = [-1, 1, 3, 5, 8, 15, 50, 150]
+    cmap = colors.ListedColormap(['white', "xkcd:robin's egg blue", 'xkcd:very light green', 'black', 'xkcd:crimson', 'grey'])
+    bounds = [-1, 1, 3, 5,15, 50, 150]
     norm = colors.BoundaryNorm(bounds, cmap.N)
     fig = plt.figure(figsize=(10, 10*1.5*len(target_vis)/len(target_vis[0])))
     ax0 = fig.add_subplot(211)
@@ -219,12 +229,14 @@ def print_grid(path, startNode, endNode, visited, toVisit, obsMap):
         ax.set_yticks(np.arange(-0.5, len(target_vis), 1))
         ax.title.set_text("A* found no solution")
         plt.show()
+        return
         
 
-    for i in range(len(path)):
-        target_vis[path[i].y][path[i].x] = 6
-    target_vis[startNode.y][startNode.x] = 10
-    target_vis[endNode.y][endNode.x] = 20
+    xs = [node.x for node in path]
+    ys = [node.y for node in path]
+    print(xs, ys, sep="\n")
+
+    ax.plot(xs, ys, color="yellow", marker = "o", linestyle="-")
 
 
     ax.title.set_text("A* solution")
