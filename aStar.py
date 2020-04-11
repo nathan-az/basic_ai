@@ -83,14 +83,7 @@ def manhDist(node1, node2):
 def euclidDist(node1, node2):
     return math.sqrt((node1.x - node2.x)**2 + (node1.y - node2.y)**2)
 
-
 def AStar(problem, h):
-
-    # starting visualisation grid
-    vis_grid = problem.obstacleMap.copy()
-    vis_grid = np.vectorize(lambda x: "x" if x else " ")(vis_grid)
-
-
     # set starting and ending nodes
     startNode = problem.nMap[problem.start[1]][problem.start[0]]
     endNode = problem.nMap[problem.end[1]][problem.end[0]]
@@ -121,7 +114,6 @@ def AStar(problem, h):
         currNode = heapq.heappop(toVisit)
         visited.append(currNode)
         # set it to visited so it is popped either next iteration or next time it is on the front of heap
-        # probably could just pop above into currNode
         currNode.visited = True
 
         for nb in currNode.neighbours:
@@ -137,44 +129,55 @@ def AStar(problem, h):
                 nb.localCost = costFromCurr
                 nb.globalCost = nb.localCost + h(nb, endNode)
 
-    # we now reverse the above search to print the path from start to end
+    return startNode, endNode, visited, toVisit
+
+def optimal_path(startNode, endNode):
     path = list()
     currNode = endNode
     path.append(currNode)
-    for node in visited:
-        vis_grid[node.y][node.x] = "*"
-    for node in toVisit:
-        vis_grid[node.y][node.x] = "-"
-
-    print("Output from A* algorithm:")
     if currNode.parent is None:
-        print("No solution given obstacles")
-        vis_grid[startNode.y][startNode.x] = "S"
-        vis_grid[endNode.y][endNode.x] = "E"
-        for row in vis_grid:
-            print(" ".join(row))
-        return
-
-    while not problem.isStart(currNode):
+        return path
+    while currNode != startNode:
         currNode = currNode.parent
         path.append(currNode)
+    return path
 
-    step = 0
+def print_path_list(path):
+    if len(path)<1:
+        print("There is no path from start to end")
+        return
     print("#:\t(x, y)")
+    step = 0
     for i in range(len(path)-1, -1, -1):
         print("{}:\t({}, {})".format(step, path[i].x, path[i].y))
         step+=1
-    
-    for node in path:
-        vis_grid[node.y][node.x] = "o"
-    
-    vis_grid[startNode.y][startNode.x] = "S"
-    vis_grid[endNode.y][endNode.x] = "E"
-    for row in vis_grid:
-        print('|' + "  ".join(row) + '|')
+
+def print_visual(path, startNode, endNode, visited, toVisit, obsMap):
+    print("Pathfinding problem:")
+    target_vis = obsMap.copy()
+    target_vis = np.vectorize(lambda x: 'x' if x else ' ')(target_vis)
+    target_vis[startNode.y][startNode.x] = "S"
+    target_vis[endNode.y][endNode.x] = "E"
+    for row in target_vis:
+        print("|{}|".format("  ".join(row)))
+
+    for node in visited:
+        target_vis[node.y][node.x] = "*"
+    for node in toVisit:
+        target_vis[node.y][node.x] = '-'
+
+    target_vis[startNode.y][startNode.x] = "S"
+    target_vis[endNode.y][endNode.x] = "E"
+
+    if len(path) < 2:
+        print("\nThere is no path from start to end.\nNode exploration:")
+        for row in target_vis:
+            print("|{}|".format("  ".join(row)))
+        return
+
+    for i in range(1, len(path)-1):
+        target_vis[path[i].y][path[i].x] = "o"
+    print("\nA* optimal path solution:")
+    for row in target_vis:
+        print("|{}|".format("  ".join(row)))
     return
-
-
-obsMap = gen_2d_map(8,8,0.4)
-problem = mazeSetup(obsMap, (1,0), (7,7))
-AStar(problem, manhDist)
