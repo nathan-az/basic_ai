@@ -4,6 +4,8 @@ import numpy as np
 from typing import Tuple
 import math
 import random
+import matplotlib.pyplot as plt
+from matplotlib import colors
 
 # generate a 2d map of trues and false
 
@@ -180,4 +182,55 @@ def print_visual(path, startNode, endNode, visited, toVisit, obsMap):
     print("\nA* optimal path solution:")
     for row in target_vis:
         print("|{}|".format("  ".join(row)))
+    return
+
+
+def print_grid(path, startNode, endNode, visited, toVisit, obsMap):
+    target_vis = obsMap.copy()
+    target_vis = np.vectorize(lambda x: 100 if x else 0)(target_vis)
+    target_vis[startNode.y][startNode.x] = 10
+    target_vis[endNode.y][endNode.x] = 20
+
+    cmap = colors.ListedColormap(['white', 'xkcd:light blue', 'xkcd:very pale green', 'xkcd:royal blue', 'black', 'xkcd:crimson', 'grey'])
+    bounds = [-1, 1, 3, 5, 8, 15, 50, 150]
+    norm = colors.BoundaryNorm(bounds, cmap.N)
+    fig = plt.figure(figsize=(10, 10*1.5*len(target_vis)/len(target_vis[0])))
+    ax0 = fig.add_subplot(211)
+    ax = fig.add_subplot(212)
+
+    ax0.imshow(target_vis, cmap=cmap, norm=norm)
+    ax0.grid(which="major", axis="both", linestyle="-", color="k", linewidth=2)
+    ax0.set_xticks(np.arange(-0.5, len(target_vis[0]), 1))
+    ax0.set_yticks(np.arange(-0.5, len(target_vis), 1))
+    ax0.title.set_text("Search problem")
+
+    for node in visited:
+        target_vis[node.y][node.x] = 2
+    for node in toVisit:
+        target_vis[node.y][node.x] = 4
+
+    target_vis[startNode.y][startNode.x] = 10
+    target_vis[endNode.y][endNode.x] = 20
+
+    if len(path) < 2:
+        ax.imshow(target_vis, cmap=cmap, norm=norm)
+        ax.grid(which="major", axis="both", linestyle="-", color="k", linewidth=2)
+        ax.set_xticks(np.arange(-0.5, len(target_vis[0]), 1))
+        ax.set_yticks(np.arange(-0.5, len(target_vis), 1))
+        ax.title.set_text("A* found no solution")
+        plt.show()
+        
+
+    for i in range(len(path)):
+        target_vis[path[i].y][path[i].x] = 6
+    target_vis[startNode.y][startNode.x] = 10
+    target_vis[endNode.y][endNode.x] = 20
+
+
+    ax.title.set_text("A* solution")
+    ax.imshow(target_vis, cmap=cmap, norm=norm)
+    ax.grid(which="major", axis="both", linestyle="-", color="k", linewidth=2)
+    ax.set_xticks(np.arange(-0.5, len(target_vis[0]), 1))
+    ax.set_yticks(np.arange(-0.5, len(target_vis), 1))
+    plt.show()
     return
