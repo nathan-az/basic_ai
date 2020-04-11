@@ -1,87 +1,89 @@
-import util
 import heapq
-import numpy as np
-from typing import Tuple
-import math
-import random
+from math import sqrt
 import matplotlib.pyplot as plt
 from matplotlib import colors
+import numpy as np
+from typing import Tuple
+from random import random
 
 # generate a 2d map of trues and false
 
 
-def gen_2d_map(m, n, p):
-    mtx = np.random.random((m, n))
+def generate_2d_map(m, n, p):
+    matrix = np.random.random((m, n))
 
     def mapper(x): return True if x > p else False
     vfunc = np.vectorize(mapper)
-    return vfunc(mtx)
+    return vfunc(matrix)
 
-# mNode class (map node) stores required information for the search
-class mNode:
-    def __init__(self, isObstacle=False, visited=False, globalCost=float('inf'),
-                 localCost=float('inf'), x=None, y=None, neighbours=list(), parent=None):
-        self.isObstacle = isObstacle
+# MapNode class (map node) stores required information for the search
+
+
+class MapNode:
+    def __init__(self, is_obstacle=False, visited=False, global_cost=float('inf'),
+                 local_cost=float('inf'), x=None, y=None, neighbours=list(), parent=None):
+        self.is_obstacle = is_obstacle
         self.visited = visited
-        self.globalCost = globalCost
-        self.localCost = localCost
+        self.global_cost = global_cost
+        self.local_cost = local_cost
         self.x = x
         self.y = y
         self.neighbours = neighbours
         self.parent = parent
 
     def __lt__(self, other):
-        return self.globalCost < other.globalCost
+        return self.global_cost < other.global_cost
 
     def __eq__(self, other):
-        return self.globalCost == other.globalCost
+        return self.global_cost == other.global_cost
 
 
-class mazeSetup:
+class ProblemSetup:
     # initialise requires map. Can take start and end positions as tuples
-    def createNodeMap(self, obstacleMap):
-        height, width = obstacleMap.shape
-        # set isObstacle attribute based on index in obstacleMap
-        nodeMap = [[mNode(isObstacle=obstacleMap[i, j], x=j, y=i, neighbours=list())
+    def create_node_map(self, obstacle_map):
+        height, width = obstacle_map.shape
+        # set is_obstacle attribute based on index in obstacle_map
+        node_map = [[MapNode(is_obstacle=obstacle_map[i, j], x=j, y=i, neighbours=list())
                     for j in range(width)] for i in range(height)]
         # allows diagonal movement, sets array of neighbouring nodes
         for i in range(height):
             for j in range(width):
-                currNode = nodeMap[i][j]
-                if self.diag:
+                current_node = node_map[i][j]
+                if self.allow_diagnoal:
+                    # up down, left right, for finding the potential 8 neighbouring nodes
                     for ud in range(-1, 2):
                         for lr in range(-1, 2):
                             if 0 <= (i+ud) < height and 0 <= (j+lr) < width and (not(lr == ud == 0)):
-                                currNode.neighbours.append(
-                                    nodeMap[i+ud][j+lr])
+                                current_node.neighbours.append(
+                                    node_map[i+ud][j+lr])
                 else:
                     if 0 <= (i + -1):
-                        currNode.neighbours.append(nodeMap[i + -1][j])
+                        current_node.neighbours.append(node_map[i + -1][j])
                     if 0 <= (j + -1):
-                        currNode.neighbours.append(nodeMap[i][j + -1])
-                    if (i + 1)<height:
-                        currNode.neighbours.append(nodeMap[i + 1][j])
-                    if (j + 1)<width:
-                        currNode.neighbours.append(nodeMap[i][j + 1])
+                        current_node.neighbours.append(node_map[i][j + -1])
+                    if (i + 1) < height:
+                        current_node.neighbours.append(node_map[i + 1][j])
+                    if (j + 1) < width:
+                        current_node.neighbours.append(node_map[i][j + 1])
 
-        return nodeMap
+        return node_map
 
     # takes start and end as x,y coordinates
-    def __init__(self, obstacleMap, start: Tuple[int, int], end: Tuple[int, int], diag=False):
-        self.obstacleMap = obstacleMap
-        self.diag = diag
-        self.obstacleMap[start[1]][start[0]] = False
-        self.obstacleMap[end[1]][end[0]] = False
-        self.nMap = self.createNodeMap(obstacleMap)
+    def __init__(self, obstacle_map, start: Tuple[int, int], end: Tuple[int, int], allow_diagnoal=False):
+        self.obstacle_map = obstacle_map
+        self.allow_diagnoal = allow_diagnoal
+        self.obstacle_map[start[1]][start[0]] = False
+        self.obstacle_map[end[1]][end[0]] = False
+        self.nMap = self.create_node_map(obstacle_map)
         self.start = start
         self.end = end
 
-    def isStart(self, node):
+    def is_start(self, node):
         if (node.x == self.start[0]) and (node.y == self.start[1]):
             return True
         return False
 
-    def isEnd(self, node):
+    def is_end(self, node):
         if (node.x == self.end[0]) and (node.y == self.end[1]):
             return True
         return False
@@ -89,97 +91,156 @@ class mazeSetup:
 # calculates the manhattan distance between two nodes requiring x and y fields
 
 
-def manhDist(node1, node2):
+def calculate_manhattan_distance(node1, node2):
     return np.abs(node1.x - node2.x) + np.abs(node1.y - node2.y)
 
 
-def euclidDist(node1, node2):
-    return math.sqrt((node1.x - node2.x)**2 + (node1.y - node2.y)**2)
+def calculate_euclidean_distance(node1, node2):
+    return sqrt((node1.x - node2.x)**2 + (node1.y - node2.y)**2)
+
 
 def AStar(problem, h):
     # set starting and ending nodes
-    startNode = problem.nMap[problem.start[1]][problem.start[0]]
-    endNode = problem.nMap[problem.end[1]][problem.end[0]]
+    start_node = problem.nMap[problem.start[1]][problem.start[0]]
+    end_node = problem.nMap[problem.end[1]][problem.end[0]]
 
     # distance from start to starting node is zero
-    startNode.localCost = 0
+    start_node.local_cost = 0
 
     # best guess of cost from starting node to end is heuristic
-    startNode.globalCost = h(startNode, endNode)
+    start_node.global_cost = h(start_node, end_node)
 
     # pointer for current node to starting node for iteration condition
-    currNode = startNode
+    current_node = start_node
 
-    toVisit = list()
+    to_visit = list()
     visited = list()
-    heapq.heappush(toVisit, currNode)
-    while (len(toVisit) > 0) and not problem.isEnd(currNode):
+    heapq.heappush(to_visit, current_node)
+    while (len(to_visit) > 0) and not problem.is_end(current_node):
         # re-sort heap so first value is always smallest
-        # may be able to avoid this step if we always update globalCost per node before pushing to heap
+        # may be able to avoid this step if we always update global_cost per node before pushing to heap
         # test after
-        heapq.heapify(toVisit)
+        heapq.heapify(to_visit)
 
-
-        # we explore the first value in the toVisit array
-        # this will be the value with the lowest globalCost as this as highest priority
-        currNode = heapq.heappop(toVisit)
-        visited.append(currNode)
+        # we explore the first value in the to_visit array
+        # this will be the value with the lowest global_cost as this as highest priority
+        current_node = heapq.heappop(to_visit)
+        visited.append(current_node)
         # set it to visited so it is popped either next iteration or next time it is on the front of heap
-        currNode.visited = True
+        current_node.visited = True
 
-        for nb in currNode.neighbours:
-            if not(nb.visited or nb.isObstacle):
-                heapq.heappush(toVisit, nb)
+        for neighbour in current_node.neighbours:
+            if not(neighbour.visited or neighbour.is_obstacle):
+                heapq.heappush(to_visit, neighbour)
 
-            # evaluation cost Cost(nb) = pastCost(nb) + h(nb)
-            costFromCurr = currNode.localCost + euclidDist(currNode, nb)
+            # evaluation cost Cost(s) = pastCost(s) + h(s)
+            cost_from_current = current_node.local_cost + calculate_euclidean_distance(current_node, neighbour)
 
-            if costFromCurr < nb.localCost:
+            if cost_from_current < neighbour.local_cost:
                 # set parent to the current node if it is nearest path to node
-                nb.parent = currNode
-                nb.localCost = costFromCurr
-                nb.globalCost = nb.localCost + h(nb, endNode)
+                neighbour.parent = current_node
+                neighbour.local_cost = cost_from_current
+                neighbour.global_cost = neighbour.local_cost + h(neighbour, end_node)
+
+    return start_node, end_node, visited, to_visit
 
 
-    return startNode, endNode, visited, toVisit
-
-def optimal_path(startNode, endNode):
+def optimal_path(start_node, end_node):
     path = list()
-    currNode = endNode
-    path.append(currNode)
-    if currNode.parent is None:
+    current_node = end_node
+    path.append(current_node)
+    if current_node.parent is None:
         return path
-    while currNode.parent is not None:
-        currNode = currNode.parent
-        path.append(currNode)
+    while current_node.parent is not None:
+        current_node = current_node.parent
+        path.append(current_node)
     return path
 
+
 def print_path_list(path):
-    if len(path)<1:
+    if len(path) < 1:
         print("There is no path from start to end")
         return
     print("#:\t(x, y)")
     step = 0
     for i in range(len(path)-1, -1, -1):
         print("{}:\t({}, {})".format(step, path[i].x, path[i].y))
-        step+=1
+        step += 1
 
-def print_visual(path, startNode, endNode, visited, toVisit, obsMap):
+
+
+# below function prints the results to two matplotlib graphics
+def display_problem(path, start_node, end_node, visited, to_visit, obstacle_map):
+    # sets colours for start and end
+    target_vis = obstacle_map.copy()
+    target_vis = np.vectorize(lambda x: 100 if x else 0)(target_vis)
+    target_vis[start_node.y][start_node.x] = 10
+    target_vis[end_node.y][end_node.x] = 20
+
+    # colour map and assignment
+    cmap = colors.ListedColormap(
+        ['white', "xkcd:robin's egg blue", 'xkcd:very light green', 'black', 'xkcd:crimson', 'grey'])
+    bounds = [-1, 1, 3, 5, 15, 50, 150]
+    norm = colors.BoundaryNorm(bounds, cmap.N)
+    fig = plt.figure(figsize=(10, 10*1.5*len(target_vis)/len(target_vis[0])))
+    ax0 = fig.add_subplot(211)
+    ax = fig.add_subplot(212)
+
+    ax0.imshow(target_vis, cmap=cmap, norm=norm)
+    ax0.grid(which="major", axis="both", linestyle="-", color="k", linewidth=2)
+    ax0.set_xticks(np.arange(-0.5, len(target_vis[0]), 1))
+    ax0.set_yticks(np.arange(-0.5, len(target_vis), 1))
+    ax0.title.set_text("Search problem")
+
+    for node in to_visit:
+        target_vis[node.y][node.x] = 4
+    for node in visited:
+        target_vis[node.y][node.x] = 2
+
+    target_vis[start_node.y][start_node.x] = 10
+    target_vis[end_node.y][end_node.x] = 20
+
+    if len(path) < 2:
+        ax.imshow(target_vis, cmap=cmap, norm=norm)
+        ax.grid(which="major", axis="both", linestyle="-",
+                marker="bo", color="k", linewidth=2)
+        ax.set_xticks(np.arange(-0.5, len(target_vis[0]), 1))
+        ax.set_yticks(np.arange(-0.5, len(target_vis), 1))
+        ax.title.set_text("A* found no solution")
+        plt.show()
+        return
+
+    xs = [node.x for node in path]
+    ys = [node.y for node in path]
+    print(xs, ys, sep="\n")
+
+    ax.plot(xs, ys, color="yellow", marker="o", linestyle="-")
+
+    ax.title.set_text("A* solution")
+    ax.imshow(target_vis, cmap=cmap, norm=norm)
+    ax.grid(which="major", axis="both", linestyle="-", color="k", linewidth=2)
+    ax.set_xticks(np.arange(-0.5, len(target_vis[0]), 1))
+    ax.set_yticks(np.arange(-0.5, len(target_vis), 1))
+    plt.show()
+    return
+
+# below function has been superseded. It was the first attempt at visualising the output
+def print_char_display(path, start_node, end_node, visited, to_visit, obstacle_map):
     print("Pathfinding problem:")
-    target_vis = obsMap.copy()
+    target_vis = obstacle_map.copy()
     target_vis = np.vectorize(lambda x: 'x' if x else ' ')(target_vis)
-    target_vis[startNode.y][startNode.x] = "S"
-    target_vis[endNode.y][endNode.x] = "E"
+    target_vis[start_node.y][start_node.x] = "S"
+    target_vis[end_node.y][end_node.x] = "E"
     for row in target_vis:
         print("|{}|".format("  ".join(row)))
 
     for node in visited:
         target_vis[node.y][node.x] = "*"
-    for node in toVisit:
+    for node in to_visit:
         target_vis[node.y][node.x] = '-'
 
-    target_vis[startNode.y][startNode.x] = "S"
-    target_vis[endNode.y][endNode.x] = "E"
+    target_vis[start_node.y][start_node.x] = "S"
+    target_vis[end_node.y][end_node.x] = "E"
 
     if len(path) < 2:
         print("\nThere is no path from start to end.\nNode exploration:")
@@ -192,57 +253,4 @@ def print_visual(path, startNode, endNode, visited, toVisit, obsMap):
     print("\nA* optimal path solution:")
     for row in target_vis:
         print("|{}|".format("  ".join(row)))
-    return
-
-
-def print_grid(path, startNode, endNode, visited, toVisit, obsMap):
-    target_vis = obsMap.copy()
-    target_vis = np.vectorize(lambda x: 100 if x else 0)(target_vis)
-    target_vis[startNode.y][startNode.x] = 10
-    target_vis[endNode.y][endNode.x] = 20
-
-    cmap = colors.ListedColormap(['white', "xkcd:robin's egg blue", 'xkcd:very light green', 'black', 'xkcd:crimson', 'grey'])
-    bounds = [-1, 1, 3, 5,15, 50, 150]
-    norm = colors.BoundaryNorm(bounds, cmap.N)
-    fig = plt.figure(figsize=(10, 10*1.5*len(target_vis)/len(target_vis[0])))
-    ax0 = fig.add_subplot(211)
-    ax = fig.add_subplot(212)
-
-    ax0.imshow(target_vis, cmap=cmap, norm=norm)
-    ax0.grid(which="major", axis="both", linestyle="-", color="k", linewidth=2)
-    ax0.set_xticks(np.arange(-0.5, len(target_vis[0]), 1))
-    ax0.set_yticks(np.arange(-0.5, len(target_vis), 1))
-    ax0.title.set_text("Search problem")
-
-    for node in toVisit:
-        target_vis[node.y][node.x] = 4
-    for node in visited:
-        target_vis[node.y][node.x] = 2
-
-    target_vis[startNode.y][startNode.x] = 10
-    target_vis[endNode.y][endNode.x] = 20
-
-    if len(path) < 2:
-        ax.imshow(target_vis, cmap=cmap, norm=norm)
-        ax.grid(which="major", axis="both", linestyle="-", marker="bo", color="k", linewidth=2)
-        ax.set_xticks(np.arange(-0.5, len(target_vis[0]), 1))
-        ax.set_yticks(np.arange(-0.5, len(target_vis), 1))
-        ax.title.set_text("A* found no solution")
-        plt.show()
-        return
-        
-
-    xs = [node.x for node in path]
-    ys = [node.y for node in path]
-    print(xs, ys, sep="\n")
-
-    ax.plot(xs, ys, color="yellow", marker = "o", linestyle="-")
-
-
-    ax.title.set_text("A* solution")
-    ax.imshow(target_vis, cmap=cmap, norm=norm)
-    ax.grid(which="major", axis="both", linestyle="-", color="k", linewidth=2)
-    ax.set_xticks(np.arange(-0.5, len(target_vis[0]), 1))
-    ax.set_yticks(np.arange(-0.5, len(target_vis), 1))
-    plt.show()
     return
