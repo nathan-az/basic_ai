@@ -77,7 +77,7 @@ class mazeSetup:
 
 
 def manhDist(node1, node2):
-    return np.abs(node1.x - node1.y) + np.abs(node2.x - node2.y)
+    return np.abs(node1.x - node2.x) + np.abs(node1.y - node2.y)
 
 
 def euclidDist(node1, node2):
@@ -85,9 +85,10 @@ def euclidDist(node1, node2):
 
 
 def AStar(problem, h):
+
     # starting visualisation grid
     vis_grid = problem.obstacleMap.copy()
-    vis_grid = np.vectorize(lambda x: "X" if x else "-")(vis_grid)
+    vis_grid = np.vectorize(lambda x: "x" if x else " ")(vis_grid)
 
 
     # set starting and ending nodes
@@ -104,6 +105,7 @@ def AStar(problem, h):
     currNode = startNode
 
     toVisit = list()
+    visited = list()
     heapq.heappush(toVisit, currNode)
     while (len(toVisit) > 0) and not problem.isEnd(currNode):
         # re-sort heap so first value is always smallest
@@ -111,21 +113,18 @@ def AStar(problem, h):
         # test after
         heapq.heapify(toVisit)
 
-        # pop nodes that have been visited
-        while (len(toVisit) > 0 and toVisit[0].visited):
-            heapq.heappop(toVisit)
         if len(toVisit) < 1:
             break
 
         # we explore the first value in the toVisit array
         # this will be the value with the lowest globalCost as this as highest priority
-        currNode = toVisit[0]
+        currNode = heapq.heappop(toVisit)
+        visited.append(currNode)
         # set it to visited so it is popped either next iteration or next time it is on the front of heap
         # probably could just pop above into currNode
         currNode.visited = True
 
         for nb in currNode.neighbours:
-            # test after, checking localCost before heappush to keep order
             if not(nb.visited or nb.isObstacle):
                 heapq.heappush(toVisit, nb)
 
@@ -142,24 +141,40 @@ def AStar(problem, h):
     path = list()
     currNode = endNode
     path.append(currNode)
+    for node in visited:
+        vis_grid[node.y][node.x] = "*"
+    for node in toVisit:
+        vis_grid[node.y][node.x] = "-"
+
+    print("Output from A* algorithm:")
     if currNode.parent is None:
         print("No solution given obstacles")
-        print(vis_grid)
+        vis_grid[startNode.y][startNode.x] = "S"
+        vis_grid[endNode.y][endNode.x] = "E"
+        for row in vis_grid:
+            print(" ".join(row))
         return
+
     while not problem.isStart(currNode):
         currNode = currNode.parent
         path.append(currNode)
 
     step = 0
-    print("Step #:\t(x, y)")
+    print("#:\t(x, y)")
     for i in range(len(path)-1, -1, -1):
-        print("Step {}:\t({}, {})".format(step, path[i].x, path[i].y))
+        print("{}:\t({}, {})".format(step, path[i].x, path[i].y))
         step+=1
     
-    print(vis_grid)
+    for node in path:
+        vis_grid[node.y][node.x] = "o"
+    
+    vis_grid[startNode.y][startNode.x] = "S"
+    vis_grid[endNode.y][endNode.x] = "E"
+    for row in vis_grid:
+        print('|' + "  ".join(row) + '|')
     return
 
 
-obsMap = gen_2d_map(8,8,0.8)
+obsMap = gen_2d_map(8,8,0.4)
 problem = mazeSetup(obsMap, (1,0), (7,7))
 AStar(problem, manhDist)
