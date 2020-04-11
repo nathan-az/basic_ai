@@ -214,17 +214,17 @@ def print_grid(path, startNode, endNode, visited, toVisit, obsMap):
     ax0.set_yticks(np.arange(-0.5, len(target_vis), 1))
     ax0.title.set_text("Search problem")
 
-    for node in visited:
-        target_vis[node.y][node.x] = 2
     for node in toVisit:
         target_vis[node.y][node.x] = 4
+    for node in visited:
+        target_vis[node.y][node.x] = 2
 
     target_vis[startNode.y][startNode.x] = 10
     target_vis[endNode.y][endNode.x] = 20
 
     if len(path) < 2:
         ax.imshow(target_vis, cmap=cmap, norm=norm)
-        ax.grid(which="major", axis="both", linestyle="-", color="k", linewidth=2)
+        ax.grid(which="major", axis="both", linestyle="-", marker="bo", color="k", linewidth=2)
         ax.set_xticks(np.arange(-0.5, len(target_vis[0]), 1))
         ax.set_yticks(np.arange(-0.5, len(target_vis), 1))
         ax.title.set_text("A* found no solution")
