@@ -4,3 +4,5 @@ This repo includes any practice implementations for AI/ML I complete. It may inc
 
 Algorithms:
 - A*: shortest path/lowest cost search ([Stanford CS221 lecture 5](https://www.youtube.com/watch?v=HEs1ZCvLH2s)) [implementation](https://github.com/nathan-az/ml_util/blob/master/aStar.py) | [demonstration](https://github.com/nathan-az/ml_util/blob/master/aStar_demo.ipynb)
+- SARSA on-policy reinforcement learning, using OpenAI toy ([Stanford CS221 lecture 8](https://www.youtube.com/watch?v=HpaHTfY52RQ)) [implementation](https://github.com/nathan-az/basic_ml/blob/master/sarsa_frozenLake-v0.py)
+- Q-Learning (with epsilon greedy policy), using OpenAI toy ([Stanford CS221 lecture 8](https://www.youtube.com/watch?v=HpaHTfY52RQ)) [implementation](https://github.com/nathan-az/basic_ml/blob/master/qlearn_frozenLake-8x8.py)
