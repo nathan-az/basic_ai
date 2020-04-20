@@ -202,7 +202,8 @@ def display_problem(path, start_node, end_node, visited, to_visit, obstacle_map)
 
     if len(path) < 2:
         ax.imshow(target_vis, cmap=cmap, norm=norm)
-        ax.grid(which="major", axis="both", linestyle="-", color="k", linewidth=2)
+        ax.grid(which="major", axis="both", linestyle="-",
+                marker="bo", color="k", linewidth=2)
         ax.set_xticks(np.arange(-0.5, len(target_vis[0]), 1))
         ax.set_yticks(np.arange(-0.5, len(target_vis), 1))
         ax.title.set_text("A* found no solution")
